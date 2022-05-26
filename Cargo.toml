@@ -6,3 +6,12 @@ name = "payeng"
 version = "0.1.0"
 
 [dependencies]
+csv = "1.1.6"
+rust_decimal = "1.23.1"
+serde = {version = "1.0.137", features = ["derive"]}
+thiserror = "1.0.31"
+
+[dev-dependencies]
+itertools = "0.10.3"
+quickcheck = "1"
+quickcheck_macros = "1"
