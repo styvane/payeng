@@ -1,14 +1,11 @@
-//! AccountManager trait
+//! Account manager trait.
 //!
-//! This module defines the `TransactionManager` which specify the behavior
-//! of an account manager.
-//!
-
-use crate::prelude::Result;
 
 use super::{TransactionData, TransactionId};
+use crate::prelude::Result;
 
-pub trait TransactionProcessor {
+/// [`AccountManager`] specifies the behavior of an account manager.
+pub trait AccountManager {
     fn make_deposit(&mut self, transaction: TransactionData) -> Result<()>;
     fn withdraw(&mut self, transaction: TransactionData) -> Result<()>;
     fn dispute(&mut self, transaction_id: TransactionId) -> Result<()>;

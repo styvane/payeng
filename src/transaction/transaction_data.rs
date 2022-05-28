@@ -10,7 +10,7 @@ use crate::error::Error;
 use crate::prelude::Client;
 
 /// The [`Transaction`] type represents a single transaction.
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 #[serde(try_from = "RawTransactionData")]
 pub struct TransactionData {
     pub(crate) client: Client,
@@ -145,7 +145,6 @@ mod tests {
     #[should_panic]
     fn fail_to_serialize_a_invalid_transaction(data: Vec<InvalidData>) {
         let data = data.into_iter().map(|d| d.0).join("\n");
-        //println!("{data:?}");
         check_record(data);
     }
 }

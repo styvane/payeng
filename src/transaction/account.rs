@@ -10,9 +10,9 @@ use parking_lot::Mutex;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use super::{TransactionData, TransactionId, TransactionProcessor};
+use super::{AccountManager, TransactionData, TransactionId};
 use crate::error::Error;
-use crate::prelude::Result;
+use crate::prelude::{Client, Result};
 
 /// [`Account`] type. See module level [documentation](self).
 #[derive(Debug, Default, Serialize)]
@@ -42,6 +42,27 @@ enum State {
     None,
 }
 
+/// Account registry type.
+#[derive(Default)]
+pub struct AccountRegistry(HashMap<Client, Account>);
+
+impl AccountRegistry {
+    /// Creates new account registry.
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// Returns an mutable reference to the client account.
+    /// If the account is not present, insert a new account and returns the reference
+    /// to new inserted account.
+    pub fn get_mut_or_insert(&mut self, client: Client) -> &mut Account {
+        match self.0.entry(client) {
+            Entry::Occupied(account) => account.into_mut(),
+            Entry::Vacant(e) => e.insert(Account::new()),
+        }
+    }
+}
+
 impl AccountData {
     /// Updates transaction history.
     fn update_history(&mut self, id: TransactionId, amount: Decimal) {
@@ -61,6 +82,7 @@ pub struct Account {
 
 impl Account {
     /// Creates new account.
+    #[tracing::instrument(name = "create new account")]
     pub fn new() -> Self {
         Account {
             state: Mutex::new(AccountData::default()),
@@ -68,7 +90,8 @@ impl Account {
     }
 }
 
-impl TransactionProcessor for Account {
+impl AccountManager for Account {
+    #[tracing::instrument(name = "make deposit", skip(self))]
     fn make_deposit(&mut self, transaction: TransactionData) -> Result<()> {
         let TransactionData { id, amount, .. } = transaction;
         // Deposit transactions are guarantee to have some amount due to validation.
@@ -82,6 +105,7 @@ impl TransactionProcessor for Account {
         Ok(())
     }
 
+    #[tracing::instrument(name = "withdraw transaction", skip(self))]
     fn withdraw(&mut self, transaction: TransactionData) -> Result<()> {
         let TransactionData { id, amount, .. } = transaction;
         // Withdrawal transactions are guarantee to have some amount due to validation.
@@ -98,6 +122,7 @@ impl TransactionProcessor for Account {
         Ok(())
     }
 
+    #[tracing::instrument(name = "dispute transaction", skip(self))]
     fn dispute(&mut self, tx_id: TransactionId) -> Result<()> {
         let mut guard = self.state.lock();
         match guard.histories.entry(tx_id) {
@@ -113,6 +138,7 @@ impl TransactionProcessor for Account {
         }
     }
 
+    #[tracing::instrument(name = "resolve transaction", skip(self))]
     fn resolve(&mut self, tx_id: TransactionId) -> Result<()> {
         let mut guard = self.state.lock();
         match guard.histories.entry(tx_id) {
@@ -128,6 +154,7 @@ impl TransactionProcessor for Account {
         }
     }
 
+    #[tracing::instrument(name = "charge back transaction", skip(self))]
     fn charge_back(&mut self, tx_id: TransactionId) -> Result<()> {
         let mut guard = self.state.lock();
         match guard.histories.entry(tx_id) {

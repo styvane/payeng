@@ -10,4 +10,18 @@ pub enum Error {
 
     #[error("non disputed transaction")]
     DisputeStateError,
+
+    #[error("failed to send transaction: {0}")]
+    SendError(String),
+
+    #[error(transparent)]
+    RecvError(#[from] crossbeam::channel::RecvError),
+
+    #[error(transparent)]
+    CsvError(#[from] csv::Error),
+
+    #[error(transparent)]
+    TracerError(#[from] tracing::subscriber::SetGlobalDefaultError),
+    #[error("account already exists")]
+    AccountError,
 }
