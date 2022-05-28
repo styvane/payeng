@@ -1,61 +1,57 @@
-//! Transaction types.
+//! Transaction data types.
 //!
-//! This modules defines various transaction types.
+//! This modules defines various transaction data types.
 //!
 use rust_decimal::Decimal;
 use serde::Deserialize;
 
-use super::TransactionType;
+use super::{TransactionId, TransactionType};
 use crate::error::Error;
 use crate::prelude::Client;
 
 /// The [`Transaction`] type represents a single transaction.
-#[derive(Clone, Debug, Deserialize)]
-#[serde(try_from = "RawTransaction")]
-pub struct Transaction {
-    client: Client,
+#[derive(Debug, Deserialize)]
+#[serde(try_from = "RawTransactionData")]
+pub struct TransactionData {
+    pub(crate) client: Client,
 
     #[serde(rename(deserialize = "type"))]
-    type_: TransactionType,
+    pub(crate) tx_type: TransactionType,
 
     #[serde(rename(deserialize = "tx"))]
-    id: TransactionId,
+    pub(crate) id: TransactionId,
 
-    amount: Option<Decimal>,
+    pub(crate) amount: Option<Decimal>,
 }
 
 /// [`RawTransaction`] represents non validated transaction.
 #[derive(Clone, Debug, Deserialize)]
 
-struct RawTransaction {
-    client: u32,
+struct RawTransactionData {
+    client: u16,
     #[serde(rename(deserialize = "type"))]
-    type_: TransactionType,
+    tx_type: TransactionType,
     #[serde(rename(deserialize = "tx"))]
     id: u32,
     amount: Option<Decimal>,
 }
 
-/// The [`TransactionId`] type is a unique ID associated to each transaction.
-#[derive(Clone, Debug, Deserialize)]
-pub struct TransactionId(u32);
-
-impl TryFrom<RawTransaction> for Transaction {
+impl TryFrom<RawTransactionData> for TransactionData {
     type Error = Error;
-    fn try_from(raw: RawTransaction) -> Result<Self, Self::Error> {
-        let RawTransaction {
+    fn try_from(raw: RawTransactionData) -> Result<Self, Self::Error> {
+        let RawTransactionData {
             client,
-            type_,
+            tx_type,
             id,
             amount,
         } = raw;
-        let transaction = Transaction {
+        let transaction = TransactionData {
             client: Client::from(client),
-            type_,
-            id: TransactionId(id),
+            tx_type,
+            id: TransactionId::from(id),
             amount,
         };
-        match transaction.type_ {
+        match transaction.tx_type {
             TransactionType::Deposit | TransactionType::Withdrawal if amount.is_none() => {
                 Err(Error::InvalidTransaction)
             }
@@ -135,7 +131,7 @@ mod tests {
         let headers = reader.byte_headers().cloned().unwrap();
 
         while reader.read_byte_record(&mut raw).unwrap() {
-            let _: Transaction = raw.deserialize(Some(&headers)).unwrap();
+            let _: TransactionData = raw.deserialize(Some(&headers)).unwrap();
         }
     }
 
