@@ -3,9 +3,9 @@
 //! This module defines the [`Client`] data structure and associated operations.
 //!
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 /// [`Client`] type. See module level [documentation](self).
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
 pub struct Client(pub(crate) u16);
 
 impl Client {

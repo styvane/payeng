@@ -1,6 +1,6 @@
-//! Account type
+//! Account data structures.
 //!
-//! This module module defines the transaction [`Account`] type.
+//! This module module defines the transaction data structures.
 //!
 
 use std::collections::hash_map::Entry;
@@ -10,13 +10,14 @@ use parking_lot::Mutex;
 use rust_decimal::Decimal;
 use serde::Serialize;
 
-use super::{AccountManager, TransactionData, TransactionId};
+use super::AccountManager;
 use crate::error::Error;
-use crate::prelude::{Client, Result};
+use crate::prelude::{Client, Result, TransactionData, TransactionId};
 
-/// [`Account`] type. See module level [documentation](self).
-#[derive(Debug, Default, Serialize)]
+/// [`AccountData`] type represents all the data associated with an account..
+#[derive(Debug, Serialize)]
 pub(crate) struct AccountData {
+    pub client: Client,
     pub available: Decimal,
     pub held: Decimal,
     pub total: Decimal,
@@ -24,6 +25,19 @@ pub(crate) struct AccountData {
 
     #[serde(skip_serializing)]
     histories: HashMap<TransactionId, Operation>,
+}
+
+impl AccountData {
+    fn new(client: &Client) -> Self {
+        Self {
+            client: client.clone(),
+            available: Default::default(),
+            held: Default::default(),
+            total: Default::default(),
+            locked: false,
+            histories: Default::default(),
+        }
+    }
 }
 
 /// The [`Operation`] type represents a recorded transaction operation.
@@ -40,27 +54,6 @@ enum State {
     Resolve,
     Final,
     None,
-}
-
-/// Account registry type.
-#[derive(Default)]
-pub struct AccountRegistry(HashMap<Client, Account>);
-
-impl AccountRegistry {
-    /// Creates new account registry.
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    /// Returns an mutable reference to the client account.
-    /// If the account is not present, insert a new account and returns the reference
-    /// to new inserted account.
-    pub fn get_mut_or_insert(&mut self, client: Client) -> &mut Account {
-        match self.0.entry(client) {
-            Entry::Occupied(account) => account.into_mut(),
-            Entry::Vacant(e) => e.insert(Account::new()),
-        }
-    }
 }
 
 impl AccountData {
@@ -83,10 +76,16 @@ pub struct Account {
 impl Account {
     /// Creates new account.
     #[tracing::instrument(name = "create new account")]
-    pub fn new() -> Self {
+    pub fn new(client: &Client) -> Self {
+        let inner = AccountData::new(client);
         Account {
-            state: Mutex::new(AccountData::default()),
+            state: Mutex::new(inner),
         }
+    }
+
+    /// Returns a reference to the inner account data.
+    pub(crate) fn inner_ref(&self) -> &Mutex<AccountData> {
+        &self.state
     }
 }
 
@@ -204,8 +203,8 @@ mod test {
         ]
         .into_iter()
         .map(|tr| {
-            let mut account = Account::new();
             let client = tr.client.clone();
+            let mut account = Account::new(&client);
             account.make_deposit(tr).unwrap();
             (client, account)
         })

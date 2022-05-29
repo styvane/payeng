@@ -5,4 +5,5 @@ pub mod result;
 pub mod transaction;
 pub mod transport;
 pub use result::Result;
+pub mod account;
 pub mod telemetry;

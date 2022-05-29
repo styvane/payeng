@@ -1,8 +1,7 @@
 //! Account manager trait.
 //!
 
-use super::{TransactionData, TransactionId};
-use crate::prelude::Result;
+use crate::prelude::{Result, TransactionData, TransactionId};
 
 /// [`AccountManager`] specifies the behavior of an account manager.
 pub trait AccountManager {

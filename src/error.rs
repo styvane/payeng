@@ -24,4 +24,10 @@ pub enum Error {
     TracerError(#[from] tracing::subscriber::SetGlobalDefaultError),
     #[error("account already exists")]
     AccountError,
+
+    #[error(transparent)]
+    IoError(std::io::Error),
+
+    #[error("expected 1 argument, found none")]
+    InvalidArgumentError,
 }
