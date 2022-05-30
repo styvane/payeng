@@ -23,6 +23,7 @@ tracing-bunyan-formatter = "0.3.2"
 tracing-subscriber = {version = "0.3.11", features = ["env-filter", "registry"]}
 
 [dev-dependencies]
+insta = {version = "1.14.0", features = ["csv"]}
 itertools = "0.10.3"
 quickcheck = "1"
 quickcheck_macros = "1"
