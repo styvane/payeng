@@ -27,5 +27,11 @@ fn run_output_expected_value() {
     };
     runtime::run(reader, writer, 20);
     let content = content.lock().clone();
-    insta::assert_csv_snapshot!(String::from_utf8(content).expect("failed to convert to string"));
+    let mut settings = insta::Settings::clone_current();
+    settings.set_sort_maps(true);
+    settings.bind(|| {
+        insta::assert_csv_snapshot!(
+            String::from_utf8(content).expect("failed to convert to string")
+        );
+    });
 }
