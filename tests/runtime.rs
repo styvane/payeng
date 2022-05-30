@@ -1,5 +1,7 @@
 use parking_lot::Mutex;
-use payeng::prelude::runtime;
+use payeng::prelude::{runtime, Client};
+use rust_decimal::Decimal;
+
 use std::sync::Arc;
 
 struct TestWriter {
@@ -16,6 +18,15 @@ impl std::io::Write for TestWriter {
     }
 }
 
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+struct Record {
+    pub client: Client,
+    pub available: Decimal,
+    pub held: Decimal,
+    pub total: Decimal,
+    pub locked: bool,
+}
+
 #[test]
 fn run_output_expected_value() {
     let dir = std::env::current_dir().expect("failed to get current directory");
@@ -27,11 +38,14 @@ fn run_output_expected_value() {
     };
     runtime::run(reader, writer, 20);
     let content = content.lock().clone();
-    let mut settings = insta::Settings::clone_current();
-    settings.set_sort_maps(true);
-    settings.bind(|| {
-        insta::assert_csv_snapshot!(
-            String::from_utf8(content).expect("failed to convert to string")
-        );
-    });
+    let content = String::from_utf8(content).expect("failed to convert to string");
+
+    let mut records = vec![];
+    for result in csv::Reader::from_reader(content.as_bytes()).deserialize() {
+        let record: Record = result.expect("failed to get record");
+        records.push(record);
+    }
+
+    records.sort_by_key(|v| v.client.clone());
+    insta::assert_csv_snapshot!(records);
 }

@@ -5,7 +5,7 @@
 
 use serde::{Deserialize, Serialize};
 /// [`Client`] type. See module level [documentation](self).
-#[derive(Clone, PartialEq, Eq, Hash, Debug, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Serialize, Deserialize)]
 pub struct Client(pub(crate) u16);
 
 impl Client {
