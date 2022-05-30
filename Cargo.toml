@@ -3,6 +3,7 @@ authors = ["styvane <styvane@acm.org>"]
 edition = "2021"
 license = "Do What The F*ck You Want To Public License"
 name = "payeng"
+rust-version = "1.61"
 version = "0.1.0"
 
 default-run = "payeng"
