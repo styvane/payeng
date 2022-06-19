@@ -7,9 +7,6 @@ Payeng
 Requirements
 ------------
 The only requirement for this is Rust.
-
-Additional you can install [bunyan-rs](https://crates.io/crates/bunyan) to better visualize the logs.
-
 By default, the logs go into the standard error.
 
 Supported Rust Versions
